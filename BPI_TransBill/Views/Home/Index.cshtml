@@ -1,0 +1,241 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+@{
+
+    <style>
+        /* Bootstrap Select custom styles */
+        .bootstrap-select .dropdown-toggle {
+            border: 1px solid #ccc !important;
+            border-radius: 4px !important;
+        }
+    </style>
+}
+
+<div class="container mt-5">
+    <div class="card shadow-lg">
+        <div class="card-header text-primary">
+            <h4 class="m-0">ค้นหาใบวางบิล</h4>
+        </div>
+        <div class="card-body">
+            <form>
+                <!-- วันที่ และ ถึงวันที่ -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="startDate" class="form-label">วันที่วางบิล</label>
+                            <div class="input-group">
+                                <input type="text" id="startDate" class="form-control datepicker" placeholder=" เลือกวันที่" autocomplete="off">
+                                <div class="input-group-append">
+                                    <span class="input-group-text datepicker-toggle" data-target="#startDate">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="endDate" class="form-label">ถึงวันที่</label>
+                            <div class="input-group">
+                                <input type="text" id="endDate" class="form-control datepicker" placeholder=" เลือกวันที่" autocomplete="off">
+                                <div class="input-group-append">
+                                    <span class="input-group-text datepicker-toggle" data-target="#endDate">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="vehicleType" class="form-label">ประเภท</label>
+                            <select id="vehicleType" class="selectpicker form-control" data-live-search="true">
+                                <option disabled selected>เลือกประเภทรถ</option>
+                                <option value="">All</option>
+                                <option value="0">รถบริษัท</option>
+                                <option value="1">รถร่วม</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="status" class="form-label">สถานะ</label>
+                            <select id="status" class="selectpicker form-control" data-live-search="true">
+                                <option disabled selected>เลือกสถานะ</option>
+                                <option value="">All</option>
+                                <option value="0">รอส่งให้บัญชี</option>
+                                <option value="1">รอบัญชีตรวจสอบ</option>
+                                <option value="2">ตั้งหนี้แล้ว</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary" id="searchDataBtn">ค้นหา</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid mt-5" id="searchDataDetail" style="display: none;">
+    <h5 class="m-0">รายละเอียดการค้นหา</h5>
+    <table id="reportTable"
+           data-toggle="table"
+           data-search="true"
+           data-pagination="true"
+           data-locale="th-TH">
+        <thead class="table-info">
+            <tr>
+                <th data-field="billDate">วันที่บิล</th>
+                <th data-field="billNo">เลขบิล</th>
+                <th data-field="vendorName">ชื่อผู้ขาย</th>
+                <th data-field="driverName">ชื่อคนขับ</th>
+                <th data-field="carType">ประเภทรถ</th>
+                <th data-field="docStatus">สถานะเอกสาร</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+
+<script>
+    $(document).ready(function() {
+        $("#searchDataBtn").click(function() {
+            var startDate = $("#startDate").val().trim();
+            var endDate = $("#endDate").val().trim();
+            var vehicleType = $("#vehicleType").val();
+            var status = $("#status").val();
+
+            $.ajax({
+                url: '/Home/SearchInvoice',
+                method: 'GET',
+                data: {
+                    startDate: startDate,
+                    endDate: endDate,
+                    vehicleType: vehicleType,
+                    status: status
+                },
+                beforeSend: function() {
+                    showLoadingOverlay();
+                },
+                success: function(response) {
+                    hideLoadingOverlay();
+                    if (response.success) {
+                        $('#reportTable').bootstrapTable('load', response.result); // โหลดข้อมูลลงตาราง
+                        $("#searchDataDetail").show();
+                        $('html, body').animate({
+                            scrollTop: $("#searchDataDetail").offset().top
+                        }, 500);
+                    } else {
+                        Swal.fire({
+                            icon: "warning",
+                            title: "ข้อความแจ้งเตือน",
+                            text: response.message,
+                        });
+                        $('#reportTable').bootstrapTable('removeAll'); // ล้างข้อมูลในตาราง
+                        $("#searchDataDetail").hide();
+                    }
+                },
+                error: function() {
+                    hideLoadingOverlay();
+                    alert('เกิดข้อผิดพลาดในการค้นหา');
+                }
+            });
+        });
+
+        $('.datepicker').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            orientation: "bottom",
+            todayBtn: 'linked',
+            todayHighlight: true,
+        }).datepicker('setDate', new Date());
+
+        $('.datepicker-toggle').click(function() {
+            var targetInput = $(this).closest('.input-group').find('.datepicker');
+            targetInput.datepicker('show');
+        });
+
+        $("#searchDataBtn").prop("disabled", true);
+
+        function validateForm() {
+            var startDate = $("#startDate").val().trim();
+            var endDate = $("#endDate").val().trim();
+
+            // ตรวจสอบเฉพาะวันที่เท่านั้น
+            var isValid = startDate !== "" && endDate !== "";
+
+            $("#searchDataBtn").prop("disabled", !isValid);
+        }
+
+        // ตรวจสอบเมื่อมีการเปลี่ยนแปลงค่าในฟอร์ม
+        $("#startDate, #endDate").on("change keyup", validateForm);
+
+
+        function showLoadingOverlay() {
+            $.LoadingOverlay("show", {
+                image: "",
+                fontawesome: "fa-solid fa-spinner fa-spin",
+            });
+        }
+
+        function hideLoadingOverlay() {
+            $.LoadingOverlay("hide");
+        };
+
+        $('#reportTable tbody').on('click', 'tr', function() {
+            var billNo = $(this).find('td').eq(1).text().trim(); // ตัดช่องว่างเผื่อมีเว้นวรรค
+
+            if (billNo) { // ตรวจสอบว่ามีค่า billNo ก่อนส่งข้อมูล
+                $.ajax({
+                    url: '/Home/SaveBillNoToSession',
+                    method: 'POST',
+                    data: { BillNo: billNo },
+                    beforeSend: function() {
+                        showLoadingOverlay(); // แสดง Loading Overlay ถ้ามี
+                    },
+                    success: function(response) {
+                        hideLoadingOverlay(); // ซ่อน Loading Overlay ถ้ามี
+
+                        if (response.success) {
+                            window.location.href = '/AddInvoice/Index';
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'เกิดข้อผิดพลาด',
+                                text: response.message || 'ไม่สามารถบันทึกเลขบิลได้',
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        hideLoadingOverlay(); // ซ่อน Loading Overlay ถ้ามี
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'เกิดข้อผิดพลาดในการส่งข้อมูล: ' + error,
+                        });
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ข้อผิดพลาด',
+                    text: 'ไม่พบเลขบิล กรุณาลองใหม่อีกครั้ง',
+                });
+            }
+        });
+
+    });
+</script>

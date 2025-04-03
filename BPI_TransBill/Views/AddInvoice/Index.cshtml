@@ -1,0 +1,1827 @@
+﻿@{
+	ViewData["Title"] = "เพิ่มข้อมูลใบเบิก";
+}
+
+@{
+
+	<style>
+		/* Bootstrap Select custom styles */
+		.bootstrap-select .dropdown-toggle {
+			border: 1px solid #ccc !important;
+			border-radius: 4px !important;
+		}
+
+		.bootstrap-select .dropdown-menu {
+			// position: absolute !important;
+			// // top: 50% !important;
+			// left: 0 !important;
+			transform: none !important;
+			width: 100% !important;
+			// z-index: 1051 !important;
+			// max-height: 300px; /* กำหนดความสูงสูงสุดของ dropdown */
+			// overflow-y: auto; /* ให้สามารถเลื่อนลงได้หากรายการเยอะ */
+		}
+	</style>
+
+	<style>
+		/* ซ่อนปุ่มขึ้น/ลงใน Chrome, Safari, Edge */
+		input[type="number"]::-webkit-inner-spin-button,
+		input[type="number"]::-webkit-outer-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		/* ซ่อนปุ่มขึ้น/ลงใน Firefox */
+		input[type="number"] {
+			-moz-appearance: textfield;
+		}
+	</style>
+}
+
+<div class="container-fluid">
+	<div class="row mt-3">
+		<div class="col-md-8">
+			<button type="button" class="btn btn-success" id="newBtn">
+				<i class="fas fa-plus"></i> เพิ่ม
+			</button>
+			<button type="button" class="btn btn-primary" id="sendApprovalBtn" disabled>
+				<i class="fas fa-file-invoice"></i> ส่งบัญชี
+			</button>
+			<button type="button" class="btn btn-info" id="printBtn" disabled hidden>
+				<i class="fas fa-print"></i> พิมพ์ใบวางบิล
+			</button>
+		</div>
+		<div class="col-md-4 text-right">
+			<button type="button" class="btn btn-warning" id="saveBtn">
+				<i class="fas fa-save"></i> บันทึก
+			</button>
+			<button type="button" class="btn btn-danger" id="cancelBtn" disabled>
+				<i class="fas fa-times"></i> ยกเลิก
+			</button>
+		</div>
+	</div>
+</div>
+
+<input type="text" id="BillId" class="form-control" hidden>
+
+
+<div class="container-fluid mt-3">
+	<div class="card shadow-lg">
+		<div class="card-header text-primary">
+			<h4 class="m-0">เพิ่มข้อมูลใบวางบิล</h4>
+		</div>
+		<div class="card-body">
+			<form>
+				<!-- เลขที่ใบวางบิล -->
+				<div class="row mb-1">
+					<div class="col-md-6">
+						<div class="form-group">
+							<label for="InvNo" class="form-label">เลขที่ใบวางบิล</label>
+							<div class="input-group">
+								<input type="text" id="InvNo" class="form-control" placeholder="กรอกเลขที่ใบวางบิล" autocomplete="off">
+								<button class="btn btn-primary" type="button" id="searchInvNo">
+									<i class="fas fa-search"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-6">
+						<div class="form-group">
+							<label for="BillDate" class="form-label">วันที่วางบิล</label>
+							<div class="input-group">
+								<input type="text" id="BillDate" class="form-control datepicker" placeholder="เลือกวันที่วางบิล" required autocomplete="off">
+								<div class="input-group-append">
+									<span class="input-group-text datepicker-toggle" data-target="#BillDate">
+										<i class="fas fa-calendar-alt"></i>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- วันที่ใบวางของ -->
+				<div class="row mb-1">
+					<div class="col-md-4">
+						<div class="form-group">
+							<label for="FromDate" class="form-label">วันที่ส่งของ</label>
+							<div class="input-group">
+								<input type="text" id="FromDate" class="form-control datepicker" placeholder="เลือกวันที่ส่งของ" required autocomplete="off">
+								<div class="input-group-append">
+									<span class="input-group-text datepicker-toggle" data-target="#FromDate">
+										<i class="fas fa-calendar-alt"></i>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="form-group">
+							<label for="ToDate" class="form-label">ถึงวันที่</label>
+							<div class="input-group">
+								<input type="text" id="ToDate" class="form-control datepicker" placeholder="เลือกวันที่ส่งของ" required autocomplete="off">
+								<div class="input-group-append">
+									<span class="input-group-text datepicker-toggle" data-target="#ToDate">
+										<i class="fas fa-calendar-alt"></i>
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="form-group">
+							<label for="DocStatus" class="form-label">สถานะ</label>
+							<input type="text" id="DocStatus" class="form-control" placeholder="" readonly autocomplete="off">
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<div class="container-fluid mt-5">
+	<div class="row">
+		<!-- Card 1: ประเภทรถร่วม -->
+		<div class="col-md-6 mb-3">
+			<div class="card shadow-lg">
+				<div class="card-header text-primary d-flex align-items-center ps-4">
+					<input class="form-check-input me-2 chkGroup" type="checkbox" name="CarType" value="1">
+					<h4 class="m-0">ประเภทรถร่วม</h4>
+				</div>
+				<div class="card-body" id="formVendor" style="display: none;">
+					<form>
+						<div class="row mb-1">
+							<div class="col-md-12">
+								<div class="form-group">
+									<label for="VendorCode" class="form-label">ผู้รับเหมา</label>
+									<select id="VendorCode" class="selectpicker form-control" data-live-search="true">
+										<option disabled selected>เลือกข้อมูล</option>
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="row mb-1">
+							<div class="col-md-12">
+								<div class="form-group">
+									<label for="PaidName" class="form-label">จ่ายเช็คในนาม</label>
+									<select id="PaidName" class="selectpicker form-control" data-live-search="true">
+										<option disabled selected>เลือกข้อมูล</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Card 2: ประเภทรถบริษัท -->
+		<div class="col-md-6 mb-3">
+			<div class="card shadow-lg">
+				<div class="card-header text-primary d-flex align-items-center ps-4">
+					<input class="form-check-input me-2 chkGroup" type="checkbox" name="CarType" value="0">
+					<h4 class="m-0">ประเภทรถบริษัท</h4>
+				</div>
+				<div class="card-body" id="formCompany" style="display: none;">
+					<form>
+						<div class="row mb-1">
+							<div class="col-md-6">
+								<div class="form-group">
+									<label for="DriverName" class="form-label">ชื่อพนักงาน</label>
+									<select id="DriverName" class="selectpicker form-control" data-live-search="true">
+										<option disabled selected>เลือกข้อมูล พนักงาน</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label for="EmpId" class="form-label">รหัสพนักงาน</label>
+									<select id="EmpId" class="selectpicker form-control" data-live-search="true">
+										<option disabled selected>เลือกข้อมูล รหัส</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+						<div class="row mb-1">
+							<div class="col-md-6">
+								<div class="form-group">
+									<label for="FuelPrice" class="form-label">ค่าน้ำมันทั้งหมด (บาท)</label>
+									<div class="input-group">
+										<input type="number" id="FuelPrice" class="form-control" placeholder="0.00" autocomplete="off" step="0.01" min="0" readonly>
+										<span class="input-group-text">฿</span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="container-fluid mt-4" id="resultInv" style="display: none;">
+	<h4 class="mb-3 text-primary">รายการข้อมูลใบส่งของ</h4>
+
+	<div id="toolbar" class="mb-2">
+		<button id="addDataBtn" class="btn btn-success" disabled>
+			<i class="fas fa-plus"></i> เพิ่มข้อมูลใบส่งของ
+		</button>
+	</div>
+
+	<table id="deliveryTable"
+		   class="table table-bordered"
+		   data-toggle="false"
+		   data-search="false"
+		   data-pagination="false"
+		   data-show-refresh="true"
+		   data-toolbar="#toolbar">
+		<thead class="table-info">
+			<tr>
+				<th data-field="date">วันที่</th>
+				<th data-field="deliveryNo">เลขที่ใบส่งของ</th>
+				<th data-field="project">โครงการ</th>
+				<th data-field="deliveryLocation">สถานที่ส่งของ</th>
+				<th data-field="pickupLocation">สถานที่-ขึ้นของ</th>
+				<th data-field="partnum">รหัสสินค้า</th>
+				<th data-field="licensePlate">ทะเบียนรถ</th>
+				@* <th data-field="driver">คนขับ</th> *@
+				<th data-field="pipeCount" data-align="right">จำนวนท่อน</th>
+				<th data-field="netWeight" data-align="right">น้ำหนักรวม (ตัน)</th>
+				<th data-field="" id="childNameColumn">เด็กติดรถ / เพศ</th>
+				<th data-field="staffAmt" id="genderColumn" data-align="right">ค่าเด็กรถกรณีพ่วง</th>
+				<th data-field="action" data-align="center">Action</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title text-primary" id="successModalLabel">บันทึกสำเร็จ</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+
+			</div>
+			<div class="modal-footer">
+				<span id="modalCountdown">ปิดอัตโนมัติใน 5 วินาที</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal ข้อมูลใบส่งของชั่วคราว -->
+<div class="modal fade" id="temporaryDeliveryModal" tabindex="-1" aria-labelledby="temporaryDeliveryModalLabel" aria-hidden="true">
+	<div class="modal-dialog" style="max-width: 90%;">
+		<div class="modal-content">
+			<div class="modal-header text-primary">
+				<h5 class="modal-title" id="temporaryDeliveryModalLabel">ข้อมูลใบส่งของ</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form>
+					<div class="row">
+						<!-- Card: ข้อมูลรถร่วม -->
+						<div class="col-md-12 mb-3" id="typeVendor">
+							<div class="card">
+								<div class="card-header bg-primary text-white text-center font-weight-bold">ประเภทรถร่วม</div>
+								<div class="card-body">
+									<div class="row">
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="form-label">วันที่วางบิล</label>
+												<input type="text" class="form-control modalFromDate" readonly>
+											</div>
+										</div>
+
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="form-label">ถึงวันที่</label>
+												<input type="text" class="form-control modalToDate" readonly>
+											</div>
+										</div>
+									</div>
+
+									<div class="row">
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="form-label">Vendor/คนขับ</label>
+												<input type="text" class="form-control modalName" readonly>
+											</div>
+										</div>
+
+										<div class="col-md-6">
+											<div class="mb-3">
+												<label class="form-label">ทะเบียนรถ</label>
+												<input type="text" class="form-control modalCarNumModal" placeholder="ระบุทะเบียนรถที่ต้องการค้น" autocomplete="off">
+											</div>
+										</div>
+
+									</div>
+
+								</div>
+							</div>
+						</div>
+
+						<!-- Card: ข้อมูลรถบริษัท -->
+						<div class="col-md-12 mb-3" id="typeCompany">
+							<div class="card">
+								<div class="card-header bg-success text-white text-center font-weight-bold">ประเภทรถบริษัท</div>
+								<div class="card-body">
+									<div class="row">
+										<div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">วันที่วางบิล</label>
+												<input type="text" class="form-control modalFromDate" readonly>
+											</div>
+										</div>
+
+										<div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">ถึงวันที่</label>
+												<input type="text" class="form-control modalToDate" readonly>
+											</div>
+										</div>
+
+										<div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">Vendor/คนขับ</label>
+												<input type="text" class="form-control modalName" readonly>
+											</div>
+										</div>
+
+										<div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">ทะเบียนรถ</label>
+												<input type="text" class="form-control modalCarNumModal" placeholder="ระบุทะเบียนรถที่ต้องการค้น" autocomplete="off">
+											</div>
+										</div>
+
+									</div>
+
+									<div class="row" id="inputHidden" style="display: none;">
+										<div class="col-md-3">
+											<div class="mb-3">
+												<div class="form-group">
+													<label class="form-label">เด็กติดรถ</label>
+													<select class="selectpicker form-control" id="modalStaffId" data-live-search="true">
+														<option disabled selected>เลือกเด็กติดรถ</option>
+													</select>
+												</div>
+											</div>
+										</div>
+
+										<div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">เพศ</label>
+												<select class="selectpicker form-control" id="modalGender">
+													<option disabled selected>เลือกเพศ</option>
+													<option value="M">ชาย</option>
+													<option value="F">หญิง</option>
+												</select>
+											</div>
+										</div>
+
+										@* <div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">เงินค่าเด็กรถ</label>
+												<input type="number" class="form-control modalShipCost" placeholder="ระบุเงินค่าเด็กรถ">
+											</div>
+										</div>
+
+										<div class="col-md-3">
+											<div class="mb-3">
+												<label class="form-label">ค่าน้ำมัน</label>
+												<input type="number" class="form-control modalFuelPrice" placeholder="ระบุค่าน้ำมัน">
+											</div>
+										</div> *@
+
+									</div>
+
+								</div>
+							</div>
+						</div>
+
+						<div class="row mb-2">
+							<div class="col d-flex align-items-center justify-content-between">
+								<div class="form-check">
+									<input type="checkbox" id="shipSet" class="form-check-input">
+									<label for="showDetails" class="form-check-label">เที่ยวพ่วง</label>
+								</div>
+								<button type="button" class="btn btn-info" id="searchBtn">ค้นหา</button>
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<table class="table table-bordered"
+							   id="InvResult"
+							   data-toggle="table"
+							   style="display: none;">
+							<thead class="table-primary">
+								<tr>
+									<th data-field="selectRow" data-checkbox="true"></th>
+									<th data-field="invDate" data-sortable="true">วันที่</th>
+									<th data-field="invNum" data-sortable="true">เลขที่ใบส่งของ</th>
+									<th data-field="invSend" data-sortable="true">สถานที่ส่ง</th>
+									<th data-field="invLocation" data-sortable="true">สถานที่ขึ้นของ</th>
+									<th data-field="carNum" data-sortable="true" data-visible="true">ทะเบียนรถ</th>
+									<th data-field="shipViaCode" data-sortable="true" data-visible="true">ประเภทรถ</th>
+									<th data-field="projectId" data-visible="true">รหัสโครงการ</th>
+									<th data-field="partNum" data-visible="true">รหัสสินค้า</th>
+									<th data-field="partDesc" data-sortable="true">รายละเอียดสินค้า</th>
+									<th data-field="driverName" data-sortable="true">คนขับ</th>
+									<th data-field="shipQty" data-sortable="true" data-align="right">จำนวนท่อน</th>
+									<th data-field="custNum" data-sortable="true" data-visible="true"></th>
+									<th data-field="shipToNum" data-sortable="true" data-visible="true"></th>
+									<th data-field="totalWeight" data-sortable="true" data-align="right" data-visible="true">น้ำหนักรวม (ตัน)</th>
+									@* <th data-field="staffId" data-visible="true">เด็กติดรถ</th>
+									<th data-field="gender" data-visible="true">เพศ</th> *@
+									<th data-field="shipCost" data-visible="true">เงินค่าเด็กรถ</th> <!-- คอลัมน์ใหม่ -->
+									<th data-field="fuelPriceStaff" data-visible="true">ค่าน้ำมัน</th> <!-- คอลัมน์ใหม่ -->
+									<th data-field="extCompany" data-sortable="true" data-visible="true"></th>
+									<th data-field="deliveryRoundNo" data-sortable="true" data-visible="true"></th>
+									<th data-field="deliveryNo" data-sortable="true" data-visible="true"></th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+
+
+					<div class="d-flex mb-3 justify-content-end">
+						
+					</div>
+
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" id="closeBtn" hidden>ปิด</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	$(document).ready(function() {
+
+		var billNo = '@ViewBag.BillNo';
+		if (billNo) {
+			$('#InvNo').val(billNo);
+
+			setTimeout(function () {
+				console.log("Clicking searchInvNo...");
+				$('#searchInvNo').trigger('click');
+			}, 500);
+		}
+
+		$('.datepicker').datepicker({
+			format: 'dd/mm/yyyy',
+			autoclose: true,
+			todayHighlight: true,
+			todayBtn: "linked"
+		});
+
+		$('.datepicker-toggle').click(function() {
+			var targetInput = $(this).closest('.input-group').find('.datepicker');
+			targetInput.datepicker('show');
+		});
+
+		function showLoadingOverlay() {
+			$.LoadingOverlay("show", {
+				image: "",
+				fontawesome: "fa-solid fa-spinner fa-spin",
+			});
+		}
+
+		function hideLoadingOverlay() {
+			$.LoadingOverlay("hide");
+		}
+
+		$('.chkGroup').each(function () {
+			$(this).attr('data-prev-checked', $(this).is(':checked'));
+		});
+
+		$('.chkGroup').on('change', function () {
+			let $checkbox = $(this);
+			let isChecked = $checkbox.is(':checked');
+			let prevChecked = $checkbox.attr('data-prev-checked') === "true";
+			let selectedValue = $('input[name="CarType"]:checked').val();
+			let targetForm = selectedValue === "1" ? "#formVendor" : "#formCompany";
+			let invNo = $('#InvNo').val();
+
+			$("#formVendor, #formCompany").hide();
+
+			$(".chkGroup").not(this).prop("checked", false).attr('data-prev-checked', 'false');
+
+			if (isChecked) {
+				$.ajax({
+					url: '/AddInvoice/CheckGroup',
+					type: 'GET',
+					data: { invNo: invNo },
+					success: function (response) {
+						if (response.success) {
+							$(targetForm).fadeIn(function () {
+								$(targetForm).find("input[required], select[required]").prop("required", true);
+							});
+							$checkbox.attr('data-prev-checked', "true");
+						} else {
+							Swal.fire({
+								icon: "warning",
+								title: "ข้อความแจ้งเตือน",
+								text: response.message,
+							}).then(() => {
+								$checkbox.prop("checked", prevChecked);
+								$('#searchInvNo').click();
+							});
+						}
+					},
+					error: function (xhr, status, error) {
+						Swal.fire({
+							icon: "warning",
+							title: "ข้อความแจ้งเตือน",
+							text: "เกิดข้อผิดพลาดในการโหลดข้อมูล",
+						});
+						$checkbox.prop("checked", prevChecked);
+					}
+				});
+			} else {
+				$("#formVendor, #formCompany").find("input, select").val("");
+				$("#formVendor, #formCompany").find("select").selectpicker('val', null);
+				$("#formVendor, #formCompany").find("select").selectpicker('refresh');
+				$("#formVendor, #formCompany").find("input[required], select[required]").prop("required", false);
+				$checkbox.attr('data-prev-checked', "false");
+			}
+		});
+
+		$('#VendorCode').on('show.bs.select', function() {
+			showLoadingOverlay();
+			$.ajax({
+				url: '/AddInvoice/GetVendors',
+				method: 'GET',
+				success: function(response) {
+					if (response.success) {
+						var $vendor = $('#VendorCode');
+						$vendor.empty();
+
+						$.each(response.resultVendors, function(index, item) {
+							$vendor.append($('<option>', {
+								value: item.character02,
+								text: item.character03
+							}));
+						});
+
+						$vendor.selectpicker('refresh');
+
+						hideLoadingOverlay();
+					}
+				},
+				error: function(xhr, status, error) {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: "error",
+						title: "เกิดข้อผิดพลาด",
+						text: response.message,
+					});
+				}
+			});
+		});
+
+		$('#PaidName').on('show.bs.select', function() {
+			showLoadingOverlay();
+			$.ajax({
+				url: '/AddInvoice/GetPaidName',
+				method: 'GET',
+				success: function(response) {
+					if (response.success) {
+						var $paidCode = $('#PaidName');
+						$paidCode.empty();
+
+						$.each(response.paidCode, function(index, item) {
+							$paidCode.append($('<option>', {
+								value: item.vendorId,
+								text: item.name
+							}));
+						});
+
+						$paidCode.selectpicker('refresh');
+
+						hideLoadingOverlay();
+					}
+				},
+				error: function(xhr, status, error) {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: "error",
+						title: "เกิดข้อผิดพลาด",
+						text: response.message,
+					});
+				}
+			});
+		});
+
+		$('#DriverName').on('show.bs.select', function() {
+			var startDate = $('#FromDate').val();
+			var endDate = $('#ToDate').val();
+
+			showLoadingOverlay();
+
+			$.ajax({
+				url: '/AddInvoice/GetEmployeeName',
+				method: 'GET',
+				data:
+				{
+					startDate: startDate,
+					endDate: endDate
+				},
+				success: function(response) {
+					if (response.success) {
+						var $empName = $('#DriverName');
+						$empName.empty();
+
+						$.each(response.resultEmpName, function(index, item) {
+							$empName.append($('<option>', {
+								value: item,
+								text: item
+							}));
+						});
+
+						$empName.selectpicker('refresh');
+
+						hideLoadingOverlay();
+					}
+				},
+				error: function(xhr, status, error) {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: "error",
+						title: "เกิดข้อผิดพลาด",
+						text: response.message,
+					});
+				}
+			});
+		});
+
+		$('#EmpId').on('show.bs.select', function() {
+			showLoadingOverlay();
+
+			$.ajax({
+				url: '/AddInvoice/GetEmpBasic',
+				method: 'GET',
+				success: function(response) {
+					if (response.success) {
+						var $empCode = $('#EmpId');
+						$empCode.empty();
+
+						$.each(response.resultEmpBasic, function(index, item) {
+							$empCode.append($('<option>', {
+								value: item.empId,
+								text: item.name
+							}));
+						});
+
+						$empCode.selectpicker('refresh');
+
+						hideLoadingOverlay();
+					}
+				},
+				error: function(xhr, status, error) {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: "error",
+						title: "เกิดข้อผิดพลาด",
+						text: response.message,
+					});
+				}
+			});
+		});
+
+		$('#modalStaffId').on('shown.bs.select', function() {
+
+			showLoadingOverlay();
+
+			$.ajax({
+				url: '/AddInvoice/GetEmpBasic',
+				method: 'GET',
+				success: function(response) {
+					if (response.success) {
+
+						var $empCode = $('#modalStaffId');
+						$empCode.empty();
+
+						$.each(response.resultEmpBasic, function(index, item) {
+							$empCode.append($('<option>', {
+								value: item.empId,
+								text: item.name
+							}));
+						});
+
+						$empCode.selectpicker('refresh');
+
+						hideLoadingOverlay();
+					}
+				},
+				error: function(xhr, status, error) {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: "error",
+						title: "เกิดข้อผิดพลาด",
+						text: response.message,
+					});
+				}
+			});
+		});
+
+
+		$('#saveBtn').on('click', function (e) {
+			e.preventDefault();
+			let selectedCarType = $('input[name="CarType"]:checked').val();
+
+			showLoadingOverlay();
+			var formData = {
+				invNo: $('#InvNo').val(),
+				fromDate: $('#FromDate').val(),
+				toDate: $('#ToDate').val(),
+				billDate: $('#BillDate').val(),
+				carType: selectedCarType,
+				vendorCode: $('#VendorCode').val(),
+				paidName: $('#PaidName').val(),
+				driverName: $("#DriverName").val(),
+				empId: $("#EmpId").val(),
+				staffId: $("#StaffId").val(),
+				staffGen: $("#StaffGen").val(),
+				//fuelPrice: $('#FuelPrice').val()
+			};
+
+			$.ajax({
+				url: '/AddInvoice/SaveForm',
+				method: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify(formData),
+				success: function (response) {
+					if (response.success) {
+						if (response.updateTable) {
+							Swal.fire({
+							  icon: "success",
+							  title: "สำเร็จ",
+							  text: "แก้ไขข้อมูลสำเร็จ",
+						});
+							hideLoadingOverlay();
+						} else {
+							$('#successModal .modal-body').html(`เลขที่เอกสารของคุณคือ : <strong>${response.billNo}</strong>`);
+
+							let countdown = 5;
+							$('#modalCountdown').text(`ปิดอัตโนมัติใน ${countdown} วินาที`);
+
+							$('#successModal').modal('show');
+
+							let timer = setInterval(function () {
+								countdown--;
+								$('#modalCountdown').text(`ปิดอัตโนมัติใน ${countdown} วินาที`);
+
+								if (countdown <= 0) {
+									clearInterval(timer);
+									$('#successModal').modal('hide');
+
+									//$('#newBtn').trigger('click');
+									$('#InvNo').val(response.billNo);
+
+									//$('#searchInvNoBtn').trigger('click');
+									//$('#DocStatus').val(response.docStatus);
+
+									$('#addDataBtn').prop('disabled', false);
+									$('#resultInv').show();
+								}
+							}, 1000);
+
+							hideLoadingOverlay();
+						}
+
+					} else {
+						Swal.fire({
+						  icon: "error",
+						  title: "เกิดข้อผิดพลาด",
+						  text: response.message,
+						});
+
+						hideLoadingOverlay();
+					}
+				},
+				error: function () {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: "error",
+						title: "ไม่สามารถบันทึกข้อมูลได้",
+						text: "โปรดลองอีกครั้งในภายหลัง",
+					  });
+				},
+			});
+		});
+
+		$('#searchInvNo').on('click', function (e) {
+			e.preventDefault();
+			showLoadingOverlay();
+			var invNo = $('#InvNo').val();
+
+			$.ajax({
+				url: '/AddInvoice/SearchInvoice',
+				method: 'GET',
+				data: { invNo: invNo },
+				success: function (response) {
+					if (response.success) {
+						var invoices = response.invoices;
+
+						$('#BillDate').val(invoices[0].billDate);
+						$('#FromDate').val(invoices[0].fromDate);
+						$('#ToDate').val(invoices[0].toDate);
+						$('#DocStatus').val(invoices[0].docStatus);
+						$('#resultInv').show();
+
+						switch (invoices[0].docStatus) {
+							case 0:
+								$('#DocStatus').val('รอส่งบัญชี');
+								$('#sendApprovalBtn').prop('disabled', false);
+								$('#printBtn').prop('disabled', false);
+								$('#saveBtn').prop('disabled', false);
+								$('#cancelBtn').prop('disabled', false);
+								$('#addDataBtn').prop('disabled', false);
+
+								break;
+							case 1:
+
+								$('#DocStatus').val('รอบัญชีตรวจสอบ');
+								$('#printBtn').prop('disabled', false);
+
+								$('input, select, checkbox').prop('disabled', true);
+								$('#deliveryTable tbody .delete-btn').each(function () {
+									$(this).prop('disabled', true) // ปิดการคลิก
+										   .addClass('disabled')  // เพิ่มคลาส disabled
+										   .css('pointer-events', 'none') // ปิดการกด
+										   .css('opacity', '0.5'); // ทำให้จางลง
+								});
+
+								$('#sendApprovalBtn').prop('disabled', true);
+								$('#cancelBtn').prop('disabled', true);
+								$('#addDataBtn').prop('disabled', true);
+								$('#saveBtn').prop('disabled', true);
+								$('#searchInvNo').prop('disabled', true);
+
+								break;
+							case 2:
+								$('#DocStatus').val('ตั้งหนี้บางส่วน');
+								$('#printBtn').prop('disabled', false);
+
+								$('input, select, checkbox').prop('disabled', true);
+								$('#deliveryTable tbody .delete-btn').each(function () {
+									$(this).prop('disabled', true) // ปิดการคลิก
+										   .addClass('disabled')  // เพิ่มคลาส disabled
+										   .css('pointer-events', 'none') // ปิดการกด
+										   .css('opacity', '0.5'); // ทำให้จางลง
+								});
+
+								$('#sendApprovalBtn').prop('disabled', true);
+								$('#cancelBtn').prop('disabled', true);
+								$('#addDataBtn').prop('disabled', true);
+								$('#saveBtn').prop('disabled', true);
+								$('#searchInvNo').prop('disabled', true);
+
+								break;
+							case 3:
+								$('#DocStatus').val('ตั้งหนี้ครบ');
+								$('#printBtn').prop('disabled', false);
+
+								$('input, select, checkbox').prop('disabled', true);
+								$('#deliveryTable tbody .delete-btn').each(function () {
+									$(this).prop('disabled', true) // ปิดการคลิก
+										.addClass('disabled')  // เพิ่มคลาส disabled
+										.css('pointer-events', 'none') // ปิดการกด
+										.css('opacity', '0.5'); // ทำให้จางลง
+								});
+
+								$('#sendApprovalBtn').prop('disabled', true);
+								$('#cancelBtn').prop('disabled', true);
+								$('#addDataBtn').prop('disabled', true);
+								$('#saveBtn').prop('disabled', true);
+								$('#searchInvNo').prop('disabled', true);
+
+								break;
+							case 9:
+								$('#DocStatus').val('ยกเลิก');
+								$('#printBtn').prop('disabled', true);
+
+								$('input, select, checkbox').prop('disabled', true);
+								$('#deliveryTable tbody .delete-btn').each(function () {
+									$(this).prop('disabled', true) // ปิดการคลิก
+										   .addClass('disabled')  // เพิ่มคลาส disabled
+										   .css('pointer-events', 'none') // ปิดการกด
+										   .css('opacity', '0.5'); // ทำให้จางลง
+								});
+
+								$('#sendApprovalBtn').prop('disabled', true);
+								$('#cancelBtn').prop('disabled', true);
+								$('#addDataBtn').prop('disabled', true);
+								$('#saveBtn').prop('disabled', true);
+								$('#searchInvNo').prop('disabled', true);
+
+								break;
+							default:
+								console.log('สถานะเอกสารไม่ทราบค่า');
+						}
+
+						var carType = parseInt(invoices[0].carType, 10); // แปลงค่าให้เป็นตัวเลข
+						let $selectedCheckbox = $('input[name="CarType"][value="' + carType + '"]'); // เลือก checkbox ที่ตรงกับค่า carType
+
+						$('#formVendor').fadeOut();
+						$('#formCompany').fadeOut();
+
+						// เช็คว่า checkbox มีอยู่จริงก่อนใช้ prop()
+						if ($selectedCheckbox.length) {
+							$selectedCheckbox.prop('checked', true);
+
+							if (carType === 1) {
+								$('#formVendor').fadeIn();
+
+								var vendorCode = invoices[0].vendorCode;
+
+								$.ajax({
+									url: '/AddInvoice/GetVendors',
+									method: 'GET',
+									success: function (response) {
+										if (response.success) {
+											var $vendorSelect = $('#VendorCode');
+											$vendorSelect.empty();
+
+											$.each(response.resultVendors, function (index, item) {
+												$vendorSelect.append($('<option>', {
+													value: item.character02,
+													text: item.character03
+												}));
+											});
+
+											if (vendorCode) {
+												$vendorSelect.val(vendorCode);
+											}
+
+											$vendorSelect.selectpicker('refresh');
+										}
+									},
+									error: function () {
+										console.log('ไม่สามารถโหลดรายชื่อ Vendor ได้');
+									}
+								});
+
+								var paidCode = invoices[0].paidName;
+
+								$.ajax({
+									url: '/AddInvoice/GetPaidName',
+									method: 'GET',
+									success: function (response) {
+										if (response.success) {
+											var $paidSelect = $('#PaidName');
+											$paidSelect.empty();
+
+											$.each(response.paidCode, function (index, item) {
+												$paidSelect.append($('<option>', {
+													value: item.vendorId,
+													text: item.name
+												}));
+											});
+
+											if (paidCode) {
+												$paidSelect.val(paidCode);
+											}
+
+											$paidSelect.selectpicker('refresh');
+										}
+									},
+									error: function () {
+										console.log('ไม่สามารถโหลดรายชื่อ Vendor ได้');
+									}
+								});
+
+							} else if (carType === 0) {
+								$('#formCompany').fadeIn();
+
+								var carName = invoices[0].driverName;
+								var startDate = $('#FromDate').val();
+								var endDate = $('#ToDate').val();
+
+								$.ajax({
+									url: '/AddInvoice/GetEmployeeName',
+									method: 'GET',
+									data: { startDate: startDate, endDate: endDate, driverName: carName },
+									success: function (response) {
+										if (response.success) {
+											var $driverSelect = $('#DriverName');
+											$driverSelect.empty();
+
+											$.each(response.resultEmpName, function (index, item) {
+												$driverSelect.append($('<option>', {
+													value: item,
+													text: item
+												}));
+											});
+
+											if (carName) {
+												$driverSelect.val(carName);
+											}
+
+											$driverSelect.selectpicker('refresh');
+										}
+									},
+									error: function () {
+										console.log('ไม่สามารถโหลดรายชื่อ Vendor ได้');
+									}
+								});
+
+								var empId = invoices[0].empId;
+
+								$.ajax({
+									url: '/AddInvoice/GetEmpBasic',
+									method: 'GET',
+									success: function (response) {
+										if (response.success) {
+											var $empSelect = $('#EmpId');
+											$empSelect.empty();
+
+											$.each(response.resultEmpBasic, function (index, item) {
+												$empSelect.append($('<option>', {
+													value: item.empId,
+													text: item.name
+												}));
+											});
+
+											if (empId) {
+												$empSelect.val(empId);
+											}
+
+											$empSelect.selectpicker('refresh');
+										}
+									},
+									error: function () {
+										console.log('ไม่สามารถโหลดรายชื่อ Vendor ได้');
+									}
+								});
+							}
+						}
+
+						if (response.invoiceBill && response.invoiceBill.length > 0) {
+							var totalFuel = 0;
+							var $tbody = $('#deliveryTable tbody');
+							$tbody.empty(); // ล้างข้อมูลเก่า
+
+							$.each(response.invoiceBill, function (index, item) {
+								var isDisabled = invoices[0].docStatus !== 0 ? 'disabled' : '';
+								var row = `
+									<tr>
+										<td>${item.shipDate}</td>
+										<td>${item.shipNum}</td>
+										<td>${item.projectDesc}</td>
+										<td>${item.shipToName}</td>
+										<td>${item.extCompany}</td>
+										<td>${item.partDescription}</td>
+										<td>${item.carNo}</td>
+										<td hidden>${item.driverName}</td>
+										<td style="text-align:right;">${item.shipQty}</td>
+										<td style="text-align:right;">${item.netWeight}</td>
+										<td hidden>${item.billID}</td>
+										<td class="tdStaffName">${item.staffID} / ${item.staffGen}</td>
+										<td class="tdStaffGen style="text-align:right;">${item.staffAmt}</td>
+
+										<td class="text-center">
+											<button class="btn btn-sm btn-danger delete-btn" ${isDisabled}>
+												<i class="fas fa-trash-alt"></i>
+											</button>
+										</td>
+									</tr>`;
+
+								$tbody.append(row);
+
+								totalFuel += parseFloat(item.fuel) || 0;
+							});
+
+							$('#FuelPrice').val(totalFuel.toFixed(2));
+
+							if (carType === 0) {
+								$('#childNameColumn, #genderColumn').show();
+								//$('.childName, .gender').show();
+							} else {
+								$('#childNameColumn, #genderColumn, .tdStaffName, .tdStaffGen').hide();
+								//$('.childName, .gender').hide();
+							}
+
+							$('#deliveryTable').show();
+						} else {
+							$('#deliveryTable tbody').empty();
+							//$('#deliveryTable').hide();
+						}
+
+						hideLoadingOverlay();
+
+					} else {
+						hideLoadingOverlay();
+						Swal.fire({
+							icon: 'error',
+							title: 'เกิดข้อผิดพลาด',
+							text: 'ไม่พบเลขที่ใบแจ้งหนี้ที่ค้นหานี้',
+						});
+					}
+				},
+				error: function () {
+					hideLoadingOverlay();
+					Swal.fire({
+						icon: 'error',
+						title: 'เกิดข้อผิดพลาด',
+						text: 'ไม่สามารถค้นหาข้อมูลได้ โปรดลองอีกครั้งในภายหลัง',
+					});
+				}
+			});
+		});
+
+		$('#addDataBtn').on('click', function() {
+			// ดึงข้อมูลจากฟอร์มบนหน้าหลัก
+			var fromDate = $('#FromDate').val();
+			var toDate = $('#ToDate').val();
+			let checkCom = $('input[name="CarType"]:checked').val();
+			var carTypeText = "";
+			var vendorName = "";
+
+			if (checkCom === "1")
+			{
+				carTypeText =  "ประเภทรถร่วม";
+				vendorName = $('#VendorCode option:selected').text().trim();
+				// ใส่ข้อมูลในฟิลด์ของ Modal
+				$('.modalCarType').val(carTypeText);
+				$('.modalFromDate').val(fromDate);
+				$('.modalToDate').val(toDate);
+				$('.modalName').val(vendorName);
+
+				$('#typeCompany').hide();
+			}
+			else if (checkCom === "0")
+			{
+				carTypeText = "ประเภทรถบริษัท";
+				vendorName = $('#DriverName option:selected').text().trim();
+				// ใส่ข้อมูลในฟิลด์ของ Modal
+				$('.modalCarType').val(carTypeText);
+				$('.modalFromDate').val(fromDate);
+				$('.modalToDate').val(toDate);
+				$('.modalName').val(vendorName);
+
+				$('#typeVendor').hide();
+			}
+
+			$('#temporaryDeliveryModal').modal('show');
+		});
+
+		// $('#searchBtn').on('click', function (e) {
+		// 	e.preventDefault();
+
+		// 	var fromDateM = $('#modalFromDate').val();
+		// 	var toDateM = $('#modalToDate').val();
+		// 	var carNumM = $('#modalCarNum').val();
+		// 	var carType = $('#modalCarType').val(); // ตรวจสอบ carType
+
+		// 	showLoadingOverlay();
+
+		// 	$.ajax({
+		// 		url: '/AddInvoice/GetDataToModal',
+		// 		method: 'GET',
+		// 		data: {
+		// 			fromDateM: fromDateM,
+		// 			toDateM: toDateM,
+		// 			carNumM: carNumM
+		// 		},
+		// 		success: function (response) {
+		// 			if (response.success) {
+						// if (carType === 'ประเภทรถบริษัท') {
+						// 	var result = response.result;
+						// 	$('#InvResult tbody').empty();
+
+						// 	var formattedData = result.map(function (item) {
+						// 		return {
+						// 			selectRow: '', // สำหรับ checkbox
+						// 			invDate: item.invDate,
+						// 			invNum: item.invNum,
+						// 			carNum: item.carNum,
+						// 			shipViaCode: item.shipViaCode,
+						// 			partNum: item.partNum,
+						// 			projectId: item.projectId,
+						// 			partDesc: item.partDesc,
+						// 			shipQty: item.shipQty,
+						// 			custNum: item.custNum,
+						// 			shipToNum: item.shipToNum,
+						// 			driverName: item.driverName,
+						// 			invSend: item.invSend,
+						// 			totalWeight: item.totalWeight,
+						// 			invLocation: item.invLocation,
+						// 			// shipCost: `<input type="number" class="form-control shipCostInput" value="" min="0" step="any" placeholder="0" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">`,
+						// 			// fuelPriceStaff: `<input type="number" class="form-control fuelPriceInput" value="" min="0" step="any" placeholder="0" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">`,
+						// 			extCompany: item.extCompany,
+						// 			deliveryRoundNo: item.deliveryRoundNo,
+						// 			deliveryNo: item.deliveryNo,
+						// 			// staffId: '<select class="selectpicker staffSelect" data-live-search="true"></select>',
+						// 			// gender: '<select class="selectpicker genderSelect"><option disabled selected>เลือกเพศ</option><option value="M">ชาย</option><option value="F">หญิง</option></select>',
+
+						// 		};
+						// 	});
+
+						// 	$('#InvResult').bootstrapTable('append', formattedData);
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'partNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'shipViaCode'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'projectId'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'custNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'shipToNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'deliveryNo'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'deliveryRoundNo'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'extCompany'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'carNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'totalWeight'); // ซ่อน
+
+						// 	loadStaffData();
+						// 	setTimeout(function () {
+						// 		$('.selectpicker').selectpicker('refresh');
+						// 	}, 100);
+
+						// } else {
+						// 	$('#InvResult').bootstrapTable('load', response.result);
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'staffId'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'gender'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'partNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'shipViaCode'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'projectId'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'custNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'shipToNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'deliveryNo'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'deliveryRoundNo'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'extCompany'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'shipCost'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'fuelPriceStaff'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'carNum'); // ซ่อน
+						// 	$('#InvResult').bootstrapTable('hideColumn', 'totalWeight'); // ซ่อน
+
+
+						// }
+
+						// $('#InvResult').bootstrapTable('refreshOptions', {
+						// 	pagination: true,
+						// 	pageSize: 5,
+						// 	pageList: [5, 10, 25, 50, 'All'],
+						// 	locale: 'th-TH',
+						// 	onPageChange: function (number, size) {
+						// 		loadStaffData();
+						// 		setTimeout(function () {
+						// 			$('.selectpicker').selectpicker('refresh');
+						// 		}, 100);
+						// 	}
+						// });
+
+						// $('#InvResult').show();
+						// $('#closeBtn').removeAttr('hidden').show();
+
+						// hideLoadingOverlay();
+		// 			} else {
+		// 				Swal.fire({
+		// 					icon: "warning",
+		// 					title: "แจ้งเตือน",
+		// 					text: response.message,
+		// 				});
+		// 				hideLoadingOverlay();
+		// 			}
+		// 		},
+		// 		error: function () {
+		// 			Swal.fire({
+		// 				icon: "error",
+		// 				title: "ไม่สามารถบันทึกข้อมูลได้",
+		// 				text: "โปรดลองอีกครั้งในภายหลัง",
+		// 			});
+
+		// 			hideLoadingOverlay();
+		// 		}
+		// 	});
+		// });
+
+		$('#searchBtn').on('click', function (e) {
+			e.preventDefault();
+
+			var fromDateM = $('.modalFromDate').val();
+			var toDateM = $('.modalToDate').val();
+			var carNumM = '';
+			var carType = '';
+
+			if ($('#typeCompany').is(':visible')) {
+				carNumM = $('#typeCompany .modalCarNumModal').val(); // ดึงค่าจาก typeCompany
+				carType = 'ประเภทรถบริษัท';
+			} else {
+				carNumM = $('#typeVendor .modalCarNumModal').val(); // ดึงค่าจาก typeVendor
+				carType = 'ประเภทรถร่วม';
+			}
+
+			showLoadingOverlay();
+
+			$.ajax({
+				url: '/AddInvoice/GetDataToModal',
+				method: 'GET',
+				data: {
+					fromDateM: fromDateM,
+					toDateM: toDateM,
+					carNumM: carNumM
+				},
+				success: function (response) {
+					if (response.success) {
+							if (carType === 'ประเภทรถบริษัท') {
+							var result = response.result;
+							$('#InvResult tbody').empty();
+
+							var formattedData = result.map(function (item) {
+								return {
+									selectRow: '', // สำหรับ checkbox
+									invDate: item.invDate,
+									invNum: item.invNum,
+									carNum: item.carNum,
+									shipViaCode: item.shipViaCode,
+									partNum: item.partNum,
+									projectId: item.projectId,
+									partDesc: item.partDesc,
+									shipQty: item.shipQty,
+									custNum: item.custNum,
+									shipToNum: item.shipToNum,
+									driverName: item.driverName,
+									invSend: item.invSend,
+									totalWeight: item.totalWeight,
+									invLocation: item.invLocation,
+									shipCost: `<input type="number" class="form-control shipCostInput" id="shipCostInput" value="" min="0" step="any" placeholder="0" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">`,
+									fuelPriceStaff: `<input type="number" class="form-control fuelPriceInput" value="" min="0" step="any" placeholder="0" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">`,
+									extCompany: item.extCompany,
+									deliveryRoundNo: item.deliveryRoundNo,
+									deliveryNo: item.deliveryNo,
+									// staffId: '<select class="selectpicker staffSelect" data-live-search="true"></select>',
+									// gender: '<select class="selectpicker genderSelect"><option disabled selected>เลือกเพศ</option><option value="M">ชาย</option><option value="F">หญิง</option></select>',
+
+								};
+							});
+
+							$('#InvResult').bootstrapTable('append', formattedData);
+							$('#InvResult').bootstrapTable('hideColumn', 'partNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'shipViaCode'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'projectId'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'custNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'shipToNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'deliveryNo'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'deliveryRoundNo'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'extCompany'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'carNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'totalWeight'); // ซ่อน
+
+							//loadStaffData();
+							// setTimeout(function () {
+							// 	$('.selectpicker').selectpicker('refresh');
+							// }, 100);
+
+						} else {
+							$('#InvResult').bootstrapTable('load', response.result);
+							// $('#InvResult').bootstrapTable('hideColumn', 'staffId'); // ซ่อน
+							// $('#InvResult').bootstrapTable('hideColumn', 'gender'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'partNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'shipViaCode'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'projectId'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'custNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'shipToNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'deliveryNo'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'deliveryRoundNo'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'extCompany'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'shipCost'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'fuelPriceStaff'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'carNum'); // ซ่อน
+							$('#InvResult').bootstrapTable('hideColumn', 'totalWeight'); // ซ่อน
+
+
+						}
+
+						$('#InvResult').bootstrapTable('refreshOptions', {
+							pagination: true,
+							pageSize: 5,
+							pageList: [5, 10, 25, 50, 'All'],
+							locale: 'th-TH',
+							// onPageChange: function (number, size) {
+							// 	loadStaffData();
+							// 	setTimeout(function () {
+							// 		$('.selectpicker').selectpicker('refresh');
+							// 	}, 100);
+							// }
+						});
+
+						$('#InvResult').show();
+						$('#inputHidden').show();
+						$('#closeBtn').removeAttr('hidden').show();
+
+						hideLoadingOverlay();
+					
+					} else {
+						Swal.fire({
+							icon: "warning",
+							title: "แจ้งเตือน",
+							text: response.message,
+						});
+						hideLoadingOverlay();
+					}
+				},
+				error: function () {
+					Swal.fire({
+						icon: "error",
+						title: "ไม่สามารถบันทึกข้อมูลได้",
+						text: "โปรดลองอีกครั้งในภายหลัง",
+					});
+
+					hideLoadingOverlay();
+				}
+			});
+		});
+
+		// เมื่อกด submit หรือเมื่อต้องการดึงค่าจาก input ที่กรอก
+		// function getInputValues(selectedRows) {
+		// 	var inputValues = [];
+
+		// 	selectedRows.forEach(row => {
+		// 		var $rowElement = $('#InvResult tbody tr').filter(function() {
+		// 			return $(this).find('td:first-child input[type="checkbox"]').prop('checked'); // ดึงเฉพาะที่ถูก Check
+		// 		});
+
+		// 		$rowElement.each(function() {
+		// 			var shipCost = $(this).find('input.shipCostInput').val();
+		// 			var fuelPrice = $(this).find('input.fuelPriceInput').val();
+		// 			var staffId = $(this).find('select.staffSelect').val();
+		// 			var gender = $(this).find('select.genderSelect').val();
+
+		// 			inputValues.push({
+		// 				shipCost: shipCost,
+		// 				fuelPrice: fuelPrice,
+		// 				staffId: staffId,
+		// 				gender: gender
+		// 			});
+		// 		});
+		// 	});
+
+		// 	return inputValues;
+		// }
+
+		// function loadStaffData() {
+		// 	$.ajax({
+		// 		url: '/AddInvoice/GetEmpBasic',
+		// 		method: 'GET',
+		// 		success: function (staffResponse) {
+		// 			if (staffResponse.success) {
+		// 				// เติมข้อมูลลงใน dropdown ของ staffId ทุกๆ แถว
+		// 				$('.staffSelect').each(function () {
+		// 					var staffSelect = $(this);
+		// 					staffSelect.empty();
+		// 					staffSelect.append('<option disabled selected>เลือกเด็กรถ</option>');
+
+		// 					// เติมข้อมูลทั้งหมดจาก staffResponse.resultEmpBasic
+		// 					$.each(staffResponse.resultEmpBasic, function (index, item) {
+		// 						staffSelect.append($('<option>', {
+		// 							value: item.empId,
+		// 							text: item.name
+		// 						}));
+		// 					});
+
+		// 					// รีเฟรช selectpicker
+		// 					staffSelect.selectpicker('refresh');
+		// 				});
+		// 			}
+		// 		},
+		// 		error: function () {
+		// 			alert('ไม่สามารถโหลดข้อมูลพนักงานได้');
+		// 		}
+		// 	});
+		// }
+
+		$('#closeBtn').on('click', function () {
+			// var selectedRows = $('#InvResult').bootstrapTable('getSelections'); // ดึงเฉพาะแถวที่ถูกเลือก
+			// var inputValues = getInputValues(selectedRows); // ส่งเฉพาะแถวที่ถูกเลือกไปดึงค่า input
+
+			var formData = {
+				invNo: $('#InvNo').val(),
+				fromDate: $('#FromDate').val(),
+				toDate: $('#ToDate').val(),
+				billDate: $('#BillDate').val(),
+				carType: $('#CarType').val(),
+				vendorCode: $('#VendorCode').val(),
+				paidName: $('#PaidName').val(),
+				driverName: $("#DriverName").val(),
+				empId: $("#EmpId").val(),
+				//staffGen: $("#StaffGen").val(),
+				deliveryInfos: []
+			};
+
+			// ดึงค่าจาก input ที่กรอกในตาราง
+			//var inputValues = getInputValues(); // เรียกใช้ฟังก์ชัน getInputValues
+
+			// ดึงเฉพาะแถวที่ถูกเลือก
+			$('#InvResult').bootstrapTable('getSelections').forEach((row, index) => {
+				var $rowElement = $(`#InvResult tbody tr[data-index="${index}"]`);
+
+				var rowData = {
+					invDate: row.invDate,
+					invNum: row.invNum,
+					carNum: row.carNum,
+					shipViaCode: row.shipViaCode,
+					projectId: row.projectId,
+					partNum: row.partNum,
+					shipQty: row.shipQty,
+					custNum: row.custNum,
+					shipToNum: row.shipToNum,
+					netWeight: row.totalWeight,
+					extCompany: row.extCompany,
+					deliveryRoundNo: row.deliveryRoundNo,
+					deliveryNo: row.deliveryNo,
+					fuelPrice: $rowElement.find('.fuelPriceInput').val(), // ใช้ค่าจาก input
+					shipCost: $rowElement.find('.shipCostInput').val(), // ใช้ค่าจาก input
+					staffId: $('#modalStaffId').val(),
+					gender: $('#modalGender').val(),
+					shipSet: $('#shipSet').prop('checked')
+				};
+
+				formData.deliveryInfos.push(rowData);
+			});
+
+			if (formData.deliveryInfos.length > 0) {
+				$.ajax({
+					url: '/AddInvoice/SaveCheckedData',
+					method: 'POST',
+					contentType: 'application/json',
+					data: JSON.stringify(formData),
+					success: function (response) {
+						if (response.success) {
+							Swal.fire({
+								icon: "success",
+								title: "บันทึกข้อมูลสำเร็จ",
+								text: "ข้อมูลที่เลือกถูกบันทึกแล้ว",
+							}).then(() => {
+								$('#temporaryDeliveryModal').modal('hide');
+								$('#InvResult').bootstrapTable('removeAll');
+								$('.modalCarType, .modalFromDate, .modalToDate, .modalName, .modalCarNumModal').val('');
+								$('#searchInvNo').click();
+								$('#InvResult').hide();
+								$('#shipSet').prop('checked', false);
+							});
+
+						} else {
+							Swal.fire({
+								icon: "error",
+								title: "เกิดข้อผิดพลาด",
+								text: response.message,
+							});
+						}
+					},
+					error: function () {
+						Swal.fire({
+							icon: "error",
+							title: "ไม่สามารถบันทึกข้อมูลได้",
+							text: "โปรดลองอีกครั้งในภายหลัง",
+						});
+					}
+				});
+			} else {
+				$('#temporaryDeliveryModal').modal('hide');
+				$('#InvResult').bootstrapTable('removeAll');
+				$('.modalCarType, .modalFromDate, .modalToDate, .modalName, .modalCarNumModal').val('');
+				$('#InvResult').hide();
+				$('#closeBtn').hide();
+				$('#inputHidden').hide();
+				$('#shipSet').prop('checked', false);
+			}
+		});
+
+		$('#deliveryTable').on('click', '.delete-btn', function () {
+			var $row = $(this).closest('tr');
+			var billId = $row.find('td:eq(10)').text().trim();
+			var shipNum = $row.find('td:eq(1)').text().trim();
+
+			Swal.fire({
+				title: 'ยืนยันการลบ?',
+				text: 'คุณต้องการลบข้อมูลนี้ใช่หรือไม่',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#d33',
+				cancelButtonColor: '#3085d6',
+				confirmButtonText: 'ลบข้อมูล',
+				cancelButtonText: 'ยกเลิก'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					$.ajax({
+						url: '/AddInvoice/DeleteInvoice',
+						method: 'POST',
+						data: { billId: billId, shipNum: shipNum },
+						success: function (response) {
+							if (response.success) {
+								Swal.fire({
+									icon: 'success',
+									title: 'สำเร็จ',
+									text: response.message
+								});
+
+								$row.remove();
+							}
+							else {
+								Swal.fire({
+									icon: 'error',
+									title: 'เกิดข้อผิดพลาด',
+									text: response.message
+								});
+							}
+						},
+						error: function () {
+							Swal.fire({
+								icon: 'error',
+								title: 'เกิดข้อผิดพลาด',
+								text: 'ไม่สามารถค้นหาข้อมูลได้ โปรดลองอีกครั้งในภายหลัง',
+							});
+						}
+					});
+				}
+			});
+		});
+
+		$('#sendApprovalBtn').on('click', function (event) {
+			event.preventDefault();
+
+			var formData = {
+				invNo: $('#InvNo').val(),
+				fromDate: $('#FromDate').val(),
+				toDate: $('#ToDate').val(),
+				billDate: $('#BillDate').val(),
+				carType: $('#CarType').val(),
+				vendorCode: $('#VendorCode').val(),
+				paidName: $('#PaidName').val(),
+				driverName: $("#DriverName").val(),
+				empId: $("#EmpId").val(),
+				staffId: $("#StaffId").val(),
+				staffGen: $("#StaffGen").val(),
+				invoiceModels: []
+			};
+
+			$('#deliveryTable tbody tr').each(function () {
+				var rowData = {
+					date: $(this).find('td:eq(0)').text(),
+					deliveryNo: $(this).find('td:eq(1)').text(),
+					project: $(this).find('td:eq(2)').text(),
+					deliveryLocation: $(this).find('td:eq(3)').text(),
+					pickupLocation: $(this).find('td:eq(4)').text(),
+					licensePlate: $(this).find('td:eq(5)').text(),
+					driver: $(this).find('td:eq(6)').text(),
+					pipeCount: $(this).find('td:eq(7)').text()
+				};
+
+				formData.invoiceModels.push(rowData);
+			});
+
+
+			Swal.fire({
+				title: 'ข้อความเตือน',
+				text: 'เมื่อส่งข้อมูลไปบัญชีแล้ว ไม่สามารถแก้ไขได้อีก แน่ใจหรือไม่?',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#d33',
+				cancelButtonColor: '#3085d6',
+				confirmButtonText: 'ยืนยัน',
+				cancelButtonText: 'ยกเลิก'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					$.ajax({
+						url: '/AddInvoice/SendApprove',
+						method: 'POST',
+						contentType: 'application/json',
+						data: JSON.stringify(formData),
+						success: function (response) {
+							if (response.success) {
+								Swal.fire({
+									icon: 'success',
+									title: 'สำเร็จ',
+									text: response.message
+								});
+
+								$('#searchInvNo').click();
+							} else {
+								Swal.fire({
+									icon: 'error',
+									title: 'ข้อมูลไม่ถูกต้อง',
+									text: response.message
+								});
+							}
+						},
+						error: function () {
+							alert("An error occurred while sending the approval.");
+						}
+					});
+				}
+			});
+		});
+
+		$('#cancelBtn').on('click', function (event) {
+			event.preventDefault();
+
+			var formData = {
+				invNo: $('#InvNo').val(),
+				fromDate: $('#FromDate').val(),
+				toDate: $('#ToDate').val(),
+				billDate: $('#BillDate').val(),
+				carType: $('#CarType').val(),
+				vendorCode: $('#VendorCode').val(),
+				paidName: $('#PaidName').val(),
+				driverName: $("#DriverName").val(),
+				empId: $("#EmpId").val(),
+				staffId: $("#StaffId").val(),
+				staffGen: $("#StaffGen").val(),
+				invoiceModels: []
+			};
+
+			$('#deliveryTable tbody tr').each(function () {
+				var rowData = {
+					date: $(this).find('td:eq(0)').text(),
+					deliveryNo: $(this).find('td:eq(1)').text(),
+					project: $(this).find('td:eq(2)').text(),
+					deliveryLocation: $(this).find('td:eq(3)').text(),
+					pickupLocation: $(this).find('td:eq(4)').text(),
+					licensePlate: $(this).find('td:eq(5)').text(),
+					driver: $(this).find('td:eq(6)').text(),
+					pipeCount: $(this).find('td:eq(7)').text()
+				};
+
+				formData.invoiceModels.push(rowData);
+			});
+
+
+			Swal.fire({
+				title: 'ข้อความเตือน',
+				text: 'ต้องการยกเลิกขข้อมูลใบวางบิลนี้หรือไม่?',
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#d33',
+				cancelButtonColor: '#3085d6',
+				confirmButtonText: 'ใช่ ลบเลย',
+				cancelButtonText: 'ยกเลิก'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					$.ajax({
+						url: '/AddInvoice/Canceled',
+						method: 'POST',
+						contentType: 'application/json',
+						data: JSON.stringify(formData),
+						success: function (response) {
+							if (response.success) {
+								Swal.fire({
+									icon: 'success',
+									title: 'สำเร็จ',
+									text: response.message
+								});
+
+								$('#searchInvNo').click();
+							} else {
+								Swal.fire({
+									icon: 'error',
+									title: 'ข้อมูลไม่ถูกต้อง',
+									text: response.message
+								});
+							}
+						},
+						error: function () {
+							alert("An error occurred while sending the approval.");
+						}
+					});
+				}
+			});
+		});
+
+		$('#newBtn').on('click', function () {
+			$('input, select').not(':button, :submit').not('[name="CarType"]').val('');
+			$('.chkGroup').prop('checked', false).attr('data-prev-checked', 'false');
+			$('#formVendor, #formCompany').hide();
+			$('select').val('').selectpicker('refresh');
+			$('input, select').not('#DocStatus').prop('disabled', false).prop('readonly', false);
+			$('#searchInvNo').prop('disabled', false);
+			$('#saveBtn').prop('disabled', false);
+			$('#printBtn, #sendApprovalBtn, #cancelBtn, #addDataBtn')
+				.prop('disabled', true);
+			$('#DocStatus').val('').prop('readonly', true);
+			$('.modalFromDate, .modalToDate, .modalName').val('').prop('readonly', true);
+			$('#deliveryTable tbody').empty();
+			$('#resultInv').hide();
+
+		});
+
+	});
+
+</script>
